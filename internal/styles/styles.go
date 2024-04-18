@@ -1,58 +1,57 @@
 package styles
 
 import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
 	"os"
-
-	catppuccin "github.com/catppuccin/go"
-	"github.com/charmbracelet/lipgloss"
 )
 
-var CurrentTheme Theme
+var Current Theme
+
+//go:embed themes.json
+var themesFromFile []byte
 
 type Theme struct {
-	PrimaryColor   string
-	SecondaryColor string
-	InactiveColor  string
-
-	NeutralLine   lipgloss.Style
-	CoveredLine   lipgloss.Style
-	UncoveredLine lipgloss.Style
+	Name       string `json:"name"`
+	Covered    string `json:"green"`
+	NotCovered string `json:"red"`
+	Neutral    string `json:"selection"`
 }
 
-func (t *Theme) setStyles() {
-	t.NeutralLine = lipgloss.NewStyle().Foreground(lipgloss.Color(t.InactiveColor))
-	t.CoveredLine = lipgloss.NewStyle().Foreground(lipgloss.Color(t.PrimaryColor))
-	t.UncoveredLine = lipgloss.NewStyle().Foreground(lipgloss.Color(t.SecondaryColor))
-}
-
-func Default() Theme {
-	t := Theme{
-		PrimaryColor:   "#00ff00",
-		SecondaryColor: "#ff0000",
-		InactiveColor:  "#7f7f7f",
+// DefaultTheme returns a default style.
+func DefaultTheme() Theme {
+	return Theme{
+		Covered:    "#00ff00",
+		NotCovered: "#ff0000",
+		Neutral:    "#7f7f7f",
 	}
-	t.setStyles()
-
-	return t
 }
 
-func Catppuccin(cpn catppuccin.Theme) Theme {
-	t := Theme{
-		PrimaryColor:   cpn.Green().Hex,
-		SecondaryColor: cpn.Red().Hex,
-		InactiveColor:  cpn.Subtext1().Hex,
-	}
-	t.setStyles()
-
-	return t
-}
-
+// SetTheme sets the current theme.
 func SetTheme() {
-	theme := os.Getenv("GOCOVSH_THEME")
+	name := os.Getenv("GOCOVSH_THEME")
+	themes, _ := parseThemes(themesFromFile)
+	Current = findTheme(themes, name)
+}
 
-	if variant := catppuccin.Variant(theme); variant != nil {
-		CurrentTheme = Catppuccin(variant)
-	} else {
-		CurrentTheme = Default()
+// findTheme finds a theme.
+func findTheme(themes []Theme, name string) Theme {
+	for _, theme := range themes {
+		if theme.Name == name {
+			return theme
+		}
 	}
+
+	return DefaultTheme()
+}
+
+// parseThemes converts the bytes from the json theme file to []Theme.
+func parseThemes(bts []byte) ([]Theme, error) {
+	var themes []Theme
+	if err := json.Unmarshal(bts, &themes); err != nil {
+		return nil, fmt.Errorf("could not load themes.json: %w", err)
+	}
+
+	return themes, nil
 }

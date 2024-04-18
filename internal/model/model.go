@@ -56,7 +56,7 @@ func New(opts ...Option) *Model {
 	m.list.FilterInput.PromptStyle = m.list.FilterInput.PromptStyle.Copy().Margin(1, 0, 0, 0)
 	m.list.Styles.PaginationStyle = paginationStyle
 	m.list.Styles.HelpStyle = helpStyle
-	m.list.Styles.StatusBar = statusBarStyle.Foreground(lipgloss.Color(styles.CurrentTheme.InactiveColor))
+	m.list.Styles.StatusBar = statusBarStyle.Foreground(lipgloss.Color(styles.Current.Neutral))
 
 	for _, opt := range opts {
 		opt(m)
@@ -393,23 +393,24 @@ func colorize(lines []string, profile *cover.Profile) (contents fileContents, er
 
 	for lineIdx, blockIdx := 0, 0; lineIdx < len(lines); lineIdx++ {
 		line, block := lines[lineIdx], profile.Blocks[blockIdx]
+		neutralStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(styles.Current.Neutral))
 
-		coverageStyle := styles.CurrentTheme.UncoveredLine
+		coverageStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(styles.Current.NotCovered))
 		if block.Count > 0 {
-			coverageStyle = styles.CurrentTheme.CoveredLine
+			coverageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(styles.Current.Covered))
 		}
 
 		adjustedStartLine, adjustedEndLine := block.StartLine-1, block.EndLine-1
 
 		// before the first block - not covered
 		if lineIdx < adjustedStartLine {
-			buf = append(buf, styles.CurrentTheme.NeutralLine.Render(line))
+			buf = append(buf, neutralStyle.Render(line))
 			continue
 		}
 
 		// first line - highlight from the start col
 		if lineIdx == adjustedStartLine {
-			uncoveredPart := styles.CurrentTheme.NeutralLine.Render(line[:block.StartCol-1])
+			uncoveredPart := neutralStyle.Render(line[:block.StartCol-1])
 			coveredPart := coverageStyle.Render(line[block.StartCol-1:])
 			buf = append(buf, fmt.Sprintf("%s%s", uncoveredPart, coveredPart))
 
@@ -422,7 +423,7 @@ func colorize(lines []string, profile *cover.Profile) (contents fileContents, er
 			if block.NumStmt > 0 {
 				buf = append(buf, coverageStyle.Render(line))
 			} else {
-				buf = append(buf, styles.CurrentTheme.NeutralLine.Render(line))
+				buf = append(buf, neutralStyle.Render(line))
 			}
 
 			continue
@@ -435,7 +436,7 @@ func colorize(lines []string, profile *cover.Profile) (contents fileContents, er
 				blockIdx++
 				lineIdx--
 			} else {
-				buf = append(buf, styles.CurrentTheme.NeutralLine.Render(line))
+				buf = append(buf, neutralStyle.Render(line))
 			}
 		}
 	}

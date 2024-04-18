@@ -42,7 +42,7 @@ func (d coverProfileDelegate) Render(w io.Writer, m list.Model, index int, listI
 	line := d.renderBaseLine(profile)
 
 	if index == m.Index() {
-		line = selectedItemStyle.Foreground(lipgloss.Color(styles.CurrentTheme.PrimaryColor)).Render("> " + line)
+		line = selectedItemStyle.Foreground(lipgloss.Color(styles.Current.Covered)).Render("> " + line)
 	} else {
 		line = itemStyle.Render(line)
 	}
@@ -51,7 +51,7 @@ func (d coverProfileDelegate) Render(w io.Writer, m list.Model, index int, listI
 }
 
 func (d coverProfileDelegate) renderBaseLine(p *coverProfile) string {
-	inactiveColor := lipgloss.Color(styles.CurrentTheme.InactiveColor)
+	inactiveColor := lipgloss.Color(styles.Current.Neutral)
 	percentage := percentageStyle.Foreground(inactiveColor).Render(fmt.Sprintf("%.2f%%", p.percentage))
 
 	return fmt.Sprintf("%s %s", p.profile.FileName, percentage)
